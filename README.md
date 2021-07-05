@@ -1,6 +1,6 @@
 # GenericRequestor
 
-A programm written to change from a certain stucture e.g. json/yaml into a differnt structure with keeping and mapping the data accordingly.
+A programm written to change from a certain stucture e.g. json/yaml into a different structure with keeping and mapping the data accordingly.
 
 ## Example
 
