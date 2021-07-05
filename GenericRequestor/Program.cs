@@ -11,6 +11,12 @@ namespace GenericRequestor
     {
         static void Main(string[] args)
         {
+            // Make a request to a webservice 
+            var client = new RestClient("https://covid-api.mmediagroup.fr/v1/");
+            var request = new RestRequest("cases?country=Germany", DataFormat.Json);
+            var response = client.Get<Dictionary<string, object>>(request);
+
+            // Define the schema of the incoming data in yml for now
             var yml = @"
             All: 
                 confirmed: number
@@ -22,12 +28,15 @@ namespace GenericRequestor
                 deaths: string
             
             ";
+
+            // serialize the yaml schema
             var inInterpreter = new YAMLInputInterpreter();
             inInterpreter.DeSerialize(yml);
-            var client = new RestClient("https://covid-api.mmediagroup.fr/v1/");
-            var request = new RestRequest("cases?country=Germany", DataFormat.Json);
-            var response = client.Get<Dictionary<string,object>>(request);
-            var ret = inInterpreter.Interpret(response.Data);
+
+            // interpret the value into a Dictionary of ITypeables (Types-folder)
+            var webServiceResponseAsTypeable = inInterpreter.Interpret(response.Data);
+
+            // Define the schema you want your data mapped into
             yml = @"
             Alle:
                 bestätigt: All.confirmed
@@ -41,26 +50,31 @@ namespace GenericRequestor
                 tode: Baden-Wurttemberg.deaths
 
             ";
+            // Serialize that as well
             var outInterpreter = new YAMLOutputInterpreter();
             outInterpreter.DeSerialize(yml);
-            Dictionary<string,object> retOut =outInterpreter.Interpret(ret);
-            var res = outInterpreter.Flatten(retOut);
 
-            var retFlatten = outInterpreter.Flatten(ret);
+            // Interpret that as well which creates a Dictionary<string,object> that contains dictionaries and Typables (wip)
+            var mappedWebServiceResp = outInterpreter.Interpret(webServiceResponseAsTypeable);
+
+            //flatten it to make it printable
+            var flattendOriginalWebServiceResp = outInterpreter.Flatten(webServiceResponseAsTypeable);
+            var flattendMappedWebServiceResp = outInterpreter.Flatten(mappedWebServiceResp);
 
             Console.WriteLine("FROM:");
-            foreach (var keyVal in retFlatten)
+            foreach (var keyVal in flattendOriginalWebServiceResp)
             {
                 Console.WriteLine(keyVal.Key + " : " + keyVal.Value.GetStringValue());
             }
 
 
             Console.WriteLine("\n\nTO:");
-            foreach (var keyVal in res)
+            foreach (var keyVal in flattendMappedWebServiceResp)
             {
                 Console.WriteLine(keyVal.Key + " : " + keyVal.Value.GetStringValue());
             }
-
+            Console.WriteLine("\n\n Press enter to exit:");
+            Console.ReadLine();
         }
     }
 }
